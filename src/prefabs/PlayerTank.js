@@ -26,7 +26,7 @@ LazerTank.PlayerTank = function (game, x, y) {
     this.bullet.kill();
 
     //Variables and constants
-    this.bulletVelocity = 300;
+    this.bulletVelocity = 200;
     
     //the first one is for horizontal, the second for vertical
     this.dir = {x: 0, y: -1}; 
