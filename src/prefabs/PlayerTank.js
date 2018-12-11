@@ -44,12 +44,10 @@ LazerTank.PlayerTank.prototype = Object.create(Phaser.Sprite.prototype);
 LazerTank.PlayerTank.prototype.constructor = LazerTank.PlayerTank;
 
 LazerTank.PlayerTank.prototype.fire = function () {
-    console.log(this.game);
     if (!this.bullet.alive) {
         this.sfx.fire.play();
         this.bullet.reset(this.x, this.y);
         this.bullet.angle = this.angle;
-        console.log(this.angle);
         this.bullet.body.velocity.setTo(
             this.dir.x * this.bulletVelocity, 
             this.dir.y * this.bulletVelocity
@@ -60,7 +58,7 @@ LazerTank.PlayerTank.prototype.fire = function () {
 LazerTank.PlayerTank.prototype.makeNoise = function () {
     if (this.body.velocity.x || this.body.velocity.y) {
         this.sfx.engineLo.stop();
-        this.sfx.engineHi.play();
+        if (!this.sfx.engineHi.isPlaying) this.sfx.engineHi.play();
     } else {
         this.sfx.engineHi.stop();
         if (!this.sfx.engineLo.isPlaying) this.sfx.engineLo.play();

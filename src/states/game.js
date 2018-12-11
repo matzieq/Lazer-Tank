@@ -31,7 +31,7 @@ LazerTank.Game.prototype = {
         var game = this.game;
         this.map = this.add.tilemap('brickmap');
         console.log(this.map);
-        this.map.addTilesetImage('Bricks', 'Brick');
+        this.map.addTilesetImage('bricks', 'Brick');
         this.layer = this.map.createLayer('bricks');
         console.log(this.layer);
         this.layer.resizeWorld();
