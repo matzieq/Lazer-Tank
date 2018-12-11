@@ -69,6 +69,7 @@ LazerTank.Game.prototype = {
     },
 
     handleInput: function () {
+        // console.log(this.tank.x, this.tank.y);
         this.tank.body.velocity.setTo(0, 0);
         if (this.cursors.up.isDown) {
             this.tank.move('up');
