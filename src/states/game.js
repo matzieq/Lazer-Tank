@@ -52,15 +52,13 @@ LazerTank.Game.prototype = {
         // this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
             bullet.kill();
-            console.log(terrain);
-            terrain.destroy();
         }, null, this);
         this.handleInput();
         this.tank.makeNoise();
     },
 
     adjustGameScale: function () {
-        // this.game.scale.pageAlignVertically = true;
+        this.game.scale.pageAlignVertically = true;
         this.game.scale.pageAlignHorizontally = true;
         this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     },
@@ -71,36 +69,17 @@ LazerTank.Game.prototype = {
     },
 
     handleInput: function () {
-        this.tank.body.velocity.y = 0;
-        this.tank.body.velocity.x = 0;
+        this.tank.body.velocity.setTo(0, 0);
         if (this.cursors.up.isDown) {
-            this.tank.body.velocity.y = -this.TANK_VELOCITY;
-            this.tank.angle = 0;
-            this.tank.dir.x = 0;
-            this.tank.dir.y = -1;
-            this.tank.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
+            this.tank.move('up');
         } else if (this.cursors.down.isDown) {
-            this.tank.body.velocity.y = this.TANK_VELOCITY;
-            this.tank.angle = 180;
-            this.tank.dir.x = 0;
-            this.tank.dir.y = 1;
-            this.tank.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
+            this.tank.move('down');
         } else if (this.cursors.left.isDown) {
-            this.tank.body.velocity.x = -this.TANK_VELOCITY;
-            this.tank.angle = 270;
-            this.tank.dir.x = -1;
-            this.tank.dir.y = 0;
-            this.tank.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
-        } else if (this.cursors.right.isDown) {
-            this.tank.body.velocity.x = this.TANK_VELOCITY;
-            this.tank.angle = 90;
-            this.tank.dir.x = 1;
-            this.tank.dir.y = 0;
-            this.tank.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
+            this.tank.move('left');
+        } else if (this.cursors.right.isDown) {  
+            this.tank.move('right');
         }
-       
         if (this.spaceKey.isDown) {
-            
             this.tank.fire();
         }
     }

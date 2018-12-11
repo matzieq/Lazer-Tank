@@ -27,7 +27,9 @@ LazerTank.PlayerTank = function (game, x, y) {
 
     //Variables and constants
     this.bulletVelocity = 200;
-    
+    this.TANK_ANIMATION_SPEED = 10;
+    this.TANK_VELOCITY = 70;
+
     //the first one is for horizontal, the second for vertical
     this.dir = {x: 0, y: -1}; 
     this.sfx = {
@@ -63,4 +65,38 @@ LazerTank.PlayerTank.prototype.makeNoise = function () {
         this.sfx.engineHi.stop();
         if (!this.sfx.engineLo.isPlaying) this.sfx.engineLo.play();
     }
+}
+
+LazerTank.PlayerTank.prototype.setDir = function (x, y) {
+    this.dir.x = x;
+    this.dir.y = y;
+    if (this.dir.x === 1) {
+        this.angle = 90;
+    } else if (this.dir.x === -1) {
+        this.angle = -90;
+    } else if (this.dir.y === 1) {
+        this.angle = 180;
+    } else if (this.dir.y === -1) {
+        this.angle = 0;
+    }
+}
+
+LazerTank.PlayerTank.prototype.move = function (dir) {
+    switch (dir) {
+        case 'up':
+            this.setDir(0, -1);
+            break;
+        case 'down':
+            this.setDir(0, 1);
+            break;
+        case 'right':
+            this.setDir(1, 0);
+            break;
+        case 'left':
+            this.setDir(-1, 0);
+            break;
+    }
+
+    this.body.velocity.setTo(this.dir.x * this.TANK_VELOCITY, this.dir.y * this.TANK_VELOCITY);
+    this.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
 }
