@@ -3,6 +3,11 @@ var LazerTank = LazerTank || {}
 LazerTank.Game = function () {};
 
 LazerTank.Game.prototype = {
+    init: function (tankBase) {
+        this.tankBase = tankBase;
+        console.log(this.tankBase);
+    },
+
     preload: function () {
         this.load.spritesheet('PlayerTank', "./img/PlayerTank.png", 16, 16, 3);
         this.load.image('Bullet', "./img/Bullet.png");
@@ -16,11 +21,7 @@ LazerTank.Game.prototype = {
         this.load.audio('enginehi', './snd/engine.wav');
         this.load.audio('enginelo', './snd/enginelow.wav');
         this.load.audio('fire', './snd/fire.wav');
-        this.tankBase = [];
-        firebase.database().ref('/tanks').on('child_added', response => {
-            this.tankBase.push(response.val());
-        });
-        console.log(this.tankBase);
+        
     },
     
     create: function () {
@@ -40,11 +41,69 @@ LazerTank.Game.prototype = {
         this.TANK_VELOCITY = 70;
         this.TANK_ANIMATION_SPEED = 20;
 
-        var availableColors = ['green', 'yellow', 'blue', 'red'];
+        var availableTanks = [
+            {
+                id: 'green',
+                color: 0x99ff99,
+                available: true,
+                x: 50,
+                y: 50
+            },
+            {
+                id: 'red',
+                color: 0xff9999,
+                available: true,
+                x: 430,
+                y: 50
+            },
+            {
+                id: 'blue',
+                color: 0x9999ff,
+                available: true,
+                x: 430,
+                y: 230
+            },
+            {
+                id: 'yellow',
+                color: 0xFFFF99,
+                available: true,
+                x: 50,
+                y: 230
+            }
+        ];
+        console.log(this.tankBase);
+        for (item of this.tankBase) {
+            for (tank of availableTanks) {
+                if (item.id === tank.id) {
+                    tank.available = false
+                }
+            }
+        }
+
+        var newTankData = null;
+        for (tank of availableTanks) {
+            if (tank.available) {
+                newTankData = tank;
+                break;
+            }
+        }
+        console.log(newTankData);
+        for (tank of this.tankBase) {
+            if (tank.id !== newTankData.id) {
+                var availableSlot = null;
+                for (slot of availableTanks) {
+                    if (slot.id === tank.id) {
+                        availableSlot = slot;
+                    }
+                }
+                availableSlot.x = tank.x;
+                availableSlot.y = tank.y;
+                var newTank = new LazerTank.PlayerTank(
+                    availableSlot, this.game, true);
+            }
+        }
+        this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);
         
-        this.tank = new LazerTank.PlayerTank('yellow', this.game, 100, 100, true);
-        this.tankTwo = new LazerTank.PlayerTank('red', this.game, 100, 150, false);
-        this.tankTwo.tint = 0xff9999;
 
 
         this.map = this.add.tilemap('terrainLevel1');
@@ -62,31 +121,20 @@ LazerTank.Game.prototype = {
     update: function () {
         this.game.physics.arcade.collide(this.tank, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank, this.waterLayer);
-        this.game.physics.arcade.collide(this.tankTwo, this.terrainLayer);
-        this.game.physics.arcade.collide(this.tankTwo, this.waterLayer);
+        
         // this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
             bullet.kill();
         }, null, this);
-        this.game.physics.arcade.collide(this.tankTwo.bullet, this.terrainLayer, function (bullet, terrain) {
-            bullet.kill();
-        }, null, this);
+       
         this.handleInput();
         this.tank.makeNoise();
 
 
-        this.game.physics.arcade.collide(this.tank, this.tankTwo);
-        this.game.physics.arcade.collide(this.tank.bullet, this.tankTwo, function (bullet, tank) {
-            bullet.kill();
-            tank.resetPosition();
-        }, null, this);
-        this.game.physics.arcade.collide(this.tankTwo.bullet, this.tank, function (bullet, tank) {
-            bullet.kill();
-            tank.resetPosition();
-        }, null, this);
+        
+        
         this.tank.updateDatabase();
-        this.tankTwo.pullFromDatabase();
-        // this.tankTwo.updateDatabase();
+       
         this.tank.pullFromDatabase();
     },
 
@@ -113,24 +161,12 @@ LazerTank.Game.prototype = {
         } else if (this.cursors.right.isDown) {  
             this.tank.move('right');
         }
-        this.tankTwo.body.velocity.setTo(0, 0);
-        if (this.wup.isDown) {
-            this.tankTwo.move('up');
-        } else if (this.wdown.isDown) {
-            this.tankTwo.move('down');
-        } else if (this.wleft.isDown) {
-            this.tankTwo.move('left');
-        } else if (this.wright.isDown) {  
-            this.tankTwo.move('right');
-        }
-
+       
 
         if (this.spaceKey.isDown) {
             console.log(this.tankBase);
             this.tank.fire();
         }
-        if (this.enterKey.isDown) {
-            this.tankTwo.fire();
-        }
+        
     }
 }

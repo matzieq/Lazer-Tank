@@ -2,12 +2,13 @@ var LazerTank = LazerTank || {}
 
 
 //templatka do dziedziczenia po obiekcie sprite, mamy jeden klucz obrazka dla każdego z nich
-LazerTank.PlayerTank = function (id, game, x, y, isLocal) {
+LazerTank.PlayerTank = function (tankData, game, isLocal) {
     //Constructor call
-    Phaser.Sprite.call(this, game, x, y, 'PlayerTank');
-    this.startX = x;
-    this.startY = y;
-    this.id = id;
+    Phaser.Sprite.call(this, game, tankData.x, tankData.y, 'PlayerTank');
+    this.startX = tankData.x;
+    this.startY = tankData.y;
+    this.id = tankData.id;
+    this.tint = tankData.color;
     //Enabling physics
     game.physics.enable(this, Phaser.Physics.ARCADE);
 
@@ -42,7 +43,7 @@ LazerTank.PlayerTank = function (id, game, x, y, isLocal) {
         engineLo: game.add.audio('enginelo', 1 ,true),
         fire: game.add.audio('fire')
     }
-    // this.pushToDatabase();
+    // this.updateDatabase();
 };
 
 //po jakim obiekcie dziedziczy
