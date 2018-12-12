@@ -136,6 +136,12 @@ LazerTank.Game.prototype = {
     update: function () {
         this.game.physics.arcade.collide(this.tank, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank, this.waterLayer);
+        this.game.physics.arcade.collide(this.tank, this.enemyTanks, function(playerTank, enemyTank) {
+            this.explode.play();
+            playerTank.reset(playerTank.startX, playerTank.startY);
+            enemyTank.reset(enemyTank.startX, enemyTank.startY);
+            playerTank.updateDatabase();
+        }, null, this);
         
         // this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
