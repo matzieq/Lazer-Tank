@@ -2,10 +2,12 @@ var LazerTank = LazerTank || {}
 
 
 //templatka do dziedziczenia po obiekcie sprite, mamy jeden klucz obrazka dla każdego z nich
-LazerTank.PlayerTank = function (game, x, y) {
-
+LazerTank.PlayerTank = function (id, game, x, y, isLocal) {
     //Constructor call
     Phaser.Sprite.call(this, game, x, y, 'PlayerTank');
+    this.startX = x;
+    this.startY = y;
+    this.id = id;
     //Enabling physics
     game.physics.enable(this, Phaser.Physics.ARCADE);
 
@@ -27,6 +29,9 @@ LazerTank.PlayerTank = function (game, x, y) {
 
     //Variables and constants
     this.bulletVelocity = 200;
+    this.score = 0;
+    this.isLocal = isLocal;
+
     this.TANK_ANIMATION_SPEED = 10;
     this.TANK_VELOCITY = 70;
 
@@ -37,6 +42,7 @@ LazerTank.PlayerTank = function (game, x, y) {
         engineLo: game.add.audio('enginelo', 1 ,true),
         fire: game.add.audio('fire')
     }
+    // this.pushToDatabase();
 };
 
 //po jakim obiekcie dziedziczy
@@ -54,7 +60,7 @@ LazerTank.PlayerTank.prototype.fire = function () {
             this.dir.x * this.bulletVelocity, 
             this.dir.y * this.bulletVelocity
         );
-    } 
+    }
 }
 
 LazerTank.PlayerTank.prototype.makeNoise = function () {
@@ -100,3 +106,60 @@ LazerTank.PlayerTank.prototype.move = function (dir) {
     this.body.velocity.setTo(this.dir.x * this.TANK_VELOCITY, this.dir.y * this.TANK_VELOCITY);
     this.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
 }
+
+LazerTank.PlayerTank.prototype.resetPosition = function() {
+    this.reset(this.startX, this.startY)
+}
+
+LazerTank.PlayerTank.prototype.pushToDatabase = function () {
+    var dataToPush = {
+        id: this.id,
+        x: this.x,
+        y: this.y,
+        dir: this.dir,
+        isFiring: this.bullet.alive,
+        bulletX: this.bullet.x,
+        bulletY: this.bullet.y,
+        bulletAngle: this.bullet.angle
+    }
+    firebase.database().ref('/tanks').push(dataToPush);
+}
+
+LazerTank.PlayerTank.prototype.updateDatabase = function () {
+    var dataToPush = {
+        id: this.id,
+        x: this.x,
+        y: this.y,
+        dir: this.dir,
+        isFiring: this.bullet.alive,
+        bulletX: this.bullet.x,
+        bulletY: this.bullet.y,
+        bulletAngle: this.bullet.angle
+    }
+    firebase.database().ref('/tanks/' + this.id).update(dataToPush);
+}
+
+LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
+    firebase.database().ref('/tanks').on('child_changed', response => {
+        var pulledData = response.val();
+        if (pulledData.id === this.id) {
+        
+            this.x = pulledData.x;
+            this.y = pulledData.y;
+            this.setDir(pulledData.dir.x, pulledData.dir.y);
+            this.bullet.x = pulledData.bulletX;
+            this.bullet.y = pulledData.bulletY;
+            if (pulledData.isFiring && !this.bullet.alive) {
+                this.bullet.reset(pulledData.bulletX, pulledData.bulletY);
+                // this.bullet.exists = true;
+                this.bullet.body.velocity.setTo(
+                    pulledData.dir.x * this.bulletVelocity,
+                    pulledData.dir.y * this.bulletVelocity
+                );
+            } else if (!pulledData.isFiring) {
+                 this.bullet.kill();
+            } 
+        }
+    });
+}
+
