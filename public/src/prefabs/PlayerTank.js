@@ -117,6 +117,8 @@ LazerTank.PlayerTank.prototype.pushToDatabase = function () {
         id: this.id,
         x: this.x,
         y: this.y,
+        velocityX: this.body.velocity.x,
+        velocityY: this.body.velocity.y,
         dir: this.dir,
         isFiring: this.bullet.alive,
         bulletX: this.bullet.x,
@@ -131,6 +133,8 @@ LazerTank.PlayerTank.prototype.updateDatabase = function () {
         id: this.id,
         x: this.x,
         y: this.y,
+        velocityX: this.body.velocity.x,
+        velocityY: this.body.velocity.y,
         dir: this.dir,
         isFiring: this.bullet.alive,
         bulletX: this.bullet.x,
@@ -144,9 +148,11 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
     firebase.database().ref('/tanks').on('child_changed', response => {
         var pulledData = response.val();
         if (pulledData.id === this.id) {
-        
+            
             this.x = pulledData.x;
             this.y = pulledData.y;
+            this.body.velocity.x = pulledData.velocityX;
+            this.body.velocity.y = pulledData.velocityY;
             this.setDir(pulledData.dir.x, pulledData.dir.y);
             this.bullet.x = pulledData.bulletX;
             this.bullet.y = pulledData.bulletY;
@@ -157,10 +163,15 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
                     pulledData.dir.x * this.bulletVelocity,
                     pulledData.dir.y * this.bulletVelocity
                 );
+                this.bullet.angle = pulledData.angle;
             } else if (!pulledData.isFiring) {
                  this.bullet.kill();
             } 
         }
     });
+}
+
+LazerTank.PlayerTank.prototype.removeFromDatabase = function () {
+    firebase.database().ref('/tanks').child(this.id).remove();
 }
 

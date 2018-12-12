@@ -88,6 +88,7 @@ LazerTank.Game.prototype = {
         }
         
         this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);
+        this.tank.updateDatabase();
         this.enemyTanks = this.add.group();
         firebase.database().ref('/tanks').on('child_added', response => {
             var addedTank = response.val();
@@ -113,8 +114,22 @@ LazerTank.Game.prototype = {
         this.waterMap.setCollisionBetween(1, 1000, true, 'water');
         this.game.world.sendToBack(this.waterLayer);
         this.bushLayer = this.map.createLayer('bushes');
+        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 4, this.handleDatabase, this);
+        var self = this;
+        window.onbeforeunload = function (e) {
+            self.tank.removeFromDatabase();
+        }
     },
     
+    handleDatabase: function () {
+        console.log("A kuku!")
+        this.tank.updateDatabase();
+        // this.tank.pullFromDatabase();
+        this.enemyTanks.forEach(function (tank) {
+            tank.pullFromDatabase();
+        }, this);
+    },
+
     update: function () {
         this.game.physics.arcade.collide(this.tank, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank, this.waterLayer);
@@ -125,16 +140,7 @@ LazerTank.Game.prototype = {
         }, null, this);
        
         this.handleInput();
-        this.tank.makeNoise();
-
-
-        
-        
-        this.tank.updateDatabase();
-        this.tank.pullFromDatabase();
-        this.enemyTanks.forEach(function (tank) {
-            tank.pullFromDatabase();
-        }, this);
+        this.tank.makeNoise();      
     },
 
     adjustGameScale: function () {
