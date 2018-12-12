@@ -11,7 +11,7 @@ LazerTank.PlayerTank = function (tankData, game, isLocal) {
     this.tint = tankData.color;
     //Enabling physics
     game.physics.enable(this, Phaser.Physics.ARCADE);
-
+    this.body.immovable = true;
     //We must add it to the game
     game.add.existing(this);
 
@@ -142,6 +142,7 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
             this.bullet.x = pulledData.bulletX;
             this.bullet.y = pulledData.bulletY;
             if (pulledData.isFiring && !this.bullet.alive) {
+                this.sfx.fire.play();
                 this.bullet.reset(pulledData.bulletX, pulledData.bulletY);
                 // this.bullet.exists = true;
                 this.bullet.body.velocity.setTo(

@@ -20,6 +20,7 @@ LazerTank.Game.prototype = {
         this.load.audio('enginehi', './snd/engine.wav');
         this.load.audio('enginelo', './snd/enginelow.wav');
         this.load.audio('fire', './snd/fire.wav');
+        this.load.audio('explode', './snd/explode.wav');
         
     },
     
@@ -107,7 +108,7 @@ LazerTank.Game.prototype = {
                 }
             }
         });
-        
+        this.explode = this.add.audio('explode');
         console.log(this.enemyBullets);
         this.map = this.add.tilemap('terrainLevel1');
         this.waterMap = this.add.tilemap('waterLevel1');
@@ -119,7 +120,7 @@ LazerTank.Game.prototype = {
         this.waterMap.setCollisionBetween(1, 1000, true, 'water');
         this.game.world.sendToBack(this.waterLayer);
         this.bushLayer = this.map.createLayer('bushes');
-        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 20, this.handleDatabase, this);
+        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
         var self = this;
         window.onbeforeunload = function (e) {
             self.tank.removeFromDatabase();
@@ -142,12 +143,14 @@ LazerTank.Game.prototype = {
         }, null, this);
         this.game.physics.arcade.collide(this.tank.bullet, this.enemyTanks, function (bullet, tank) {
             bullet.kill();
+            this.explode.play();
+            this.tank.score++;
         }, null, this);
 
         
         this.game.physics.arcade.collide(this.enemyBullets, this.tank, function (tank, bullet) {
             bullet.kill();
-            console.log(tank);
+            this.explode.play();
             tank.reset(tank.startX, tank.startY)
             tank.updateDatabase();
         }, null, this);
