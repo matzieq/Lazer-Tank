@@ -112,21 +112,6 @@ LazerTank.PlayerTank.prototype.resetPosition = function() {
     this.reset(this.startX, this.startY)
 }
 
-LazerTank.PlayerTank.prototype.pushToDatabase = function () {
-    var dataToPush = {
-        id: this.id,
-        x: this.x,
-        y: this.y,
-        velocityX: this.body.velocity.x,
-        velocityY: this.body.velocity.y,
-        dir: this.dir,
-        isFiring: this.bullet.alive,
-        bulletX: this.bullet.x,
-        bulletY: this.bullet.y,
-        bulletAngle: this.bullet.angle
-    }
-    firebase.database().ref('/tanks').push(dataToPush);
-}
 
 LazerTank.PlayerTank.prototype.updateDatabase = function () {
     var dataToPush = {
@@ -148,7 +133,7 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
     firebase.database().ref('/tanks').on('child_changed', response => {
         var pulledData = response.val();
         if (pulledData.id === this.id) {
-            
+            this.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
             this.x = pulledData.x;
             this.y = pulledData.y;
             this.body.velocity.x = pulledData.velocityX;
@@ -163,7 +148,7 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
                     pulledData.dir.x * this.bulletVelocity,
                     pulledData.dir.y * this.bulletVelocity
                 );
-                this.bullet.angle = pulledData.angle;
+                this.bullet.angle = pulledData.bulletAngle;
             } else if (!pulledData.isFiring) {
                  this.bullet.kill();
             } 

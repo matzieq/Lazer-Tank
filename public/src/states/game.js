@@ -43,28 +43,28 @@ LazerTank.Game.prototype = {
         this.availableTanks = [
             {
                 id: 'green',
-                color: 0x99ff99,
+                color: 0x55ff55,
                 available: true,
                 x: 50,
                 y: 50
             },
             {
                 id: 'red',
-                color: 0xff9999,
+                color: 0xff5555,
                 available: true,
                 x: 430,
                 y: 50
             },
             {
                 id: 'blue',
-                color: 0x9999ff,
+                color: 0x5555ff,
                 available: true,
                 x: 430,
                 y: 230
             },
             {
                 id: 'yellow',
-                color: 0xFFFF99,
+                color: 0xFFFF55,
                 available: true,
                 x: 50,
                 y: 230
@@ -74,7 +74,7 @@ LazerTank.Game.prototype = {
         for (item of this.tankBase) {
             for (tank of this.availableTanks) {
                 if (item.id === tank.id) {
-                    tank.available = false
+                    tank.available = false;
                 }
             }
         }
@@ -90,6 +90,8 @@ LazerTank.Game.prototype = {
         this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);
         this.tank.updateDatabase();
         this.enemyTanks = this.add.group();
+        this.enemyBullets = this.add.group();
+
         firebase.database().ref('/tanks').on('child_added', response => {
             var addedTank = response.val();
             for (tank of this.availableTanks) {
@@ -98,12 +100,15 @@ LazerTank.Game.prototype = {
                     tank.y = addedTank.y;
                     var newTank = new LazerTank.PlayerTank(
                         tank, this.game, true);
+                    newTank.pullFromDatabase();
                     this.enemyTanks.add(newTank);
+                    console.log(newTank.bullet);
+                    this.enemyBullets.add(newTank.bullet);
                 }
             }
         });
         
-
+        console.log(this.enemyBullets);
         this.map = this.add.tilemap('terrainLevel1');
         this.waterMap = this.add.tilemap('waterLevel1');
         this.map.addTilesetImage('TankTerrain', 'Tiles');
@@ -114,7 +119,7 @@ LazerTank.Game.prototype = {
         this.waterMap.setCollisionBetween(1, 1000, true, 'water');
         this.game.world.sendToBack(this.waterLayer);
         this.bushLayer = this.map.createLayer('bushes');
-        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 4, this.handleDatabase, this);
+        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 20, this.handleDatabase, this);
         var self = this;
         window.onbeforeunload = function (e) {
             self.tank.removeFromDatabase();
@@ -122,12 +127,9 @@ LazerTank.Game.prototype = {
     },
     
     handleDatabase: function () {
-        console.log("A kuku!")
+    
         this.tank.updateDatabase();
-        // this.tank.pullFromDatabase();
-        this.enemyTanks.forEach(function (tank) {
-            tank.pullFromDatabase();
-        }, this);
+        
     },
 
     update: function () {
@@ -137,6 +139,25 @@ LazerTank.Game.prototype = {
         // this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer);
         this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
             bullet.kill();
+        }, null, this);
+        this.game.physics.arcade.collide(this.tank.bullet, this.enemyTanks, function (bullet, tank) {
+            bullet.kill();
+        }, null, this);
+
+        
+        this.game.physics.arcade.collide(this.enemyBullets, this.tank, function (tank, bullet) {
+            bullet.kill();
+            console.log(tank);
+            tank.reset(tank.startX, tank.startY)
+            tank.updateDatabase();
+        }, null, this);
+        
+
+        this.game.physics.arcade.collide(this.enemyTanks, this.terrainLayer, function (tank, terrain) {
+            tank.body.velocity.setTo(0, 0);
+        }, null, this);
+        this.game.physics.arcade.collide(this.enemyTanks, this.waterLayer, function (tank, terrain) {
+            tank.body.velocity.setTo(0, 0);
         }, null, this);
        
         this.handleInput();
