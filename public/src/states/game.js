@@ -5,7 +5,6 @@ LazerTank.Game = function () {};
 LazerTank.Game.prototype = {
     init: function (tankBase) {
         this.tankBase = tankBase;
-        console.log(this.tankBase);
     },
 
     preload: function () {
@@ -41,7 +40,7 @@ LazerTank.Game.prototype = {
         this.TANK_VELOCITY = 70;
         this.TANK_ANIMATION_SPEED = 20;
 
-        var availableTanks = [
+        this.availableTanks = [
             {
                 id: 'green',
                 color: 0x99ff99,
@@ -71,9 +70,9 @@ LazerTank.Game.prototype = {
                 y: 230
             }
         ];
-        console.log(this.tankBase);
+        
         for (item of this.tankBase) {
-            for (tank of availableTanks) {
+            for (tank of this.availableTanks) {
                 if (item.id === tank.id) {
                     tank.available = false
                 }
@@ -81,30 +80,28 @@ LazerTank.Game.prototype = {
         }
 
         var newTankData = null;
-        for (tank of availableTanks) {
+        for (tank of this.availableTanks) {
             if (tank.available) {
                 newTankData = tank;
                 break;
             }
         }
-        console.log(newTankData);
-        for (tank of this.tankBase) {
-            if (tank.id !== newTankData.id) {
-                var availableSlot = null;
-                for (slot of availableTanks) {
-                    if (slot.id === tank.id) {
-                        availableSlot = slot;
-                    }
-                }
-                availableSlot.x = tank.x;
-                availableSlot.y = tank.y;
-                var newTank = new LazerTank.PlayerTank(
-                    availableSlot, this.game, true);
-            }
-        }
-        this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);
         
-
+        this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);
+        this.enemyTanks = this.add.group();
+        firebase.database().ref('/tanks').on('child_added', response => {
+            var addedTank = response.val();
+            for (tank of this.availableTanks) {
+                if (addedTank.id === tank.id && addedTank.id !== newTankData.id) {
+                    tank.x = addedTank.x;
+                    tank.y = addedTank.y;
+                    var newTank = new LazerTank.PlayerTank(
+                        tank, this.game, true);
+                    this.enemyTanks.add(newTank);
+                }
+            }
+        });
+        
 
         this.map = this.add.tilemap('terrainLevel1');
         this.waterMap = this.add.tilemap('waterLevel1');
@@ -134,8 +131,10 @@ LazerTank.Game.prototype = {
         
         
         this.tank.updateDatabase();
-       
         this.tank.pullFromDatabase();
+        this.enemyTanks.forEach(function (tank) {
+            tank.pullFromDatabase();
+        }, this);
     },
 
     adjustGameScale: function () {
@@ -164,7 +163,7 @@ LazerTank.Game.prototype = {
        
 
         if (this.spaceKey.isDown) {
-            console.log(this.tankBase);
+            
             this.tank.fire();
         }
         
