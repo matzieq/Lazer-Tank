@@ -50,9 +50,26 @@ LazerTank.Game.prototype = {
     update: function () {
         this.handleCollisions();
         this.handleInput();
-        // this.tank.updateDatabase();
         this.handleDatabase();
+        this.checkScores();
         this.tank.makeNoise();      
+    },
+
+    shutdown: function () {
+        this.tank.removeFromDatabase();
+    },
+
+    checkScores: function () {
+        if (this.tank.score >= 10) {
+           
+            this.state.start('Winning', true, false, this.tank.id);
+        }
+        this.enemyTanks.forEach(function(enemyTank) {
+            if (enemyTank.score >= 10) {
+                this.state.start('Winning', true, false, enemyTank.id);
+            } 
+        }, this);
+        
     },
 
     handleDatabase: function () {
@@ -182,6 +199,9 @@ LazerTank.Game.prototype = {
             
             this.tank.fire();
         }
+        if (this.escapeKey.isDown) {
+            this.state.start('Title');
+        }
         
     },
 
@@ -251,15 +271,16 @@ LazerTank.Game.prototype = {
         this.tank.updateDatabase();
         this.enemyTanks = this.add.group();
         this.enemyBullets = this.add.group();
-        this.addTankToDatabase(newTankData);
+        this.watchForAddedTanks(newTankData.id);
+        this.watchForRemovedTanks();
         
     },
 
-    addTankToDatabase: function (newTankData) {
+    watchForAddedTanks: function (excludedId) {
         firebase.database().ref('/tanks').on('child_added', response => {
             var addedTank = response.val();
             for (tank of this.availableTanks) {
-                if (addedTank.id === tank.id && addedTank.id !== newTankData.id) {
+                if (addedTank.id === tank.id && addedTank.id !== excludedId) {
                     tank.x = addedTank.x;
                     tank.y = addedTank.y;
                     var newTank = new LazerTank.PlayerTank(
@@ -273,9 +294,23 @@ LazerTank.Game.prototype = {
         });
     },
 
+    watchForRemovedTanks: function () {
+        firebase.database().ref('/tanks').on('child_removed', response => {
+            var removedTank = response.val();
+            this.enemyTanks.forEach(function (enemyTank) {
+                if (enemyTank.id === removedTank.id) {
+                    enemyTank.bullet.destroy();
+                    enemyTank.scoreText.destroy();
+                    enemyTank.destroy();
+                }
+            }, this);
+        });
+    },
+
     loadKeys: function () {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.escapeKey = this.input.keyboard.addKey(Phaser.Keyboard.ESC);
     },
 
     loadMaps: function () {
