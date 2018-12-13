@@ -9,6 +9,9 @@ LazerTank.PlayerTank = function (tankData, game, isLocal) {
     this.startY = tankData.y;
     this.id = tankData.id;
     this.tint = tankData.color;
+
+    //a flag to disable player control under specific circumstances
+    this.controlled = true;
     //Enabling physics
     game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.immovable = true;
@@ -96,6 +99,7 @@ LazerTank.PlayerTank.prototype.setDir = function (x, y) {
 }
 
 LazerTank.PlayerTank.prototype.move = function (dir) {
+    if (!this.controlled) return;
     switch (dir) {
         case 'up':
             this.setDir(0, -1);

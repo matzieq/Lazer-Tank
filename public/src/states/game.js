@@ -12,6 +12,7 @@ LazerTank.Game.prototype = {
         this.load.image('Bullet', "./img/Bullet.png");
         this.load.image('Brick', "./img/Bricks.png");
         this.load.image('Tiles', "./img/TankTerrain.png");
+        this.load.image('Smoke', "./img/Smoke.png");
 
         this.load.tilemap('brickmap', './map/bricksForTank.json', null, Phaser.Tilemap.TILED_JSON);
         this.load.tilemap('terrainLevel1', './map/terrainLevel1.json', null, Phaser.Tilemap.TILED_JSON);
@@ -33,11 +34,12 @@ LazerTank.Game.prototype = {
         this.loadTankInfo();   
         this.createTanks();
         this.loadMaps();
-
+        this.TIME_BETWEEN_UPDATES = 5;
         //the only global sound
         this.explode = this.add.audio('explode');
 
         //timer for updating the database with tank data
+        this.updateTimer = this.TIME_BETWEEN_UPDATES;
         // this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
 
         //if the player closes the window we should clear tank data
@@ -48,17 +50,24 @@ LazerTank.Game.prototype = {
     update: function () {
         this.handleCollisions();
         this.handleInput();
-        this.tank.updateDatabase();
+        // this.tank.updateDatabase();
+        this.handleDatabase();
         this.tank.makeNoise();      
     },
-    
-    handleDatabase: function () {
-        this.tank.updateDatabase();  
-    },
 
+    handleDatabase: function () {
+        if(--this.updateTimer < 0) {
+            this.updateTimer = this.TIME_BETWEEN_UPDATES;
+            this.tank.updateDatabase();
+        }
+    },
+    
     handleCollisions: function () {
         this.collideWithTerrain();
         this.collideWithObjects();
+        this.enemyTanks.forEach(function(tank) {
+            this.fixPosition(tank);
+        }, this);
     },
 
     collideWithTerrain: function () {
@@ -81,28 +90,69 @@ LazerTank.Game.prototype = {
     collideWithObjects: function () {
         this.game.physics.arcade.collide(this.tank, this.enemyTanks, function(playerTank, enemyTank) {
             this.explode.play();
-            playerTank.resetPosition();
-            enemyTank.resetPosition();
+            // playerTank.resetPosition();
+            // enemyTank.resetPosition();
+            this.animateCollision(playerTank);
             playerTank.updateDatabase();
-            enemyTank.updateDatabase();
+            // enemyTank.updateDatabase();
         }, null, this);
         
         
         this.game.physics.arcade.collide(this.tank.bullet, this.enemyTanks, function (bullet, tank) {
             bullet.kill();
-            tank.resetPosition();
+            // tank.resetPosition();
             tank.updateDatabase();
             this.explode.play();
-            this.tank.increaseScore(1);
+            this.makeExplosion(tank.x, tank.y);
+            //the score is increased only if the other player is not in the middle of spinning out of control
+            if (tank.controlled) this.tank.increaseScore(1);
         }, null, this);
 
         
         this.game.physics.arcade.collide(this.enemyBullets, this.tank, function (tank, bullet) {
             bullet.kill();
             this.explode.play();
-            tank.resetPosition();
+            // tank.resetPosition();
+            this.animateCollision(tank);
             tank.updateDatabase();
         }, null, this);
+    },
+
+    animateCollision: function (tank) {
+        if (tank.controlled) {
+            tank.controlled = false
+            this.makeExplosion(tank.x, tank.y);
+            var destroyTween = this.add.tween(tank).to({
+                x: tank.x + this.game.rnd.between(-5, 5) * 20,
+                y: tank.y + this.game.rnd.between(-5, 5) * 20,
+                rotation: 5
+                }, 500, Phaser.Easing.Linear.None, true);
+            destroyTween.onComplete.add(function () {
+                tank.controlled = true;
+                this.fixPosition(tank);         
+            }, this);
+        }
+    },
+
+    makeExplosion: function (x, y) {
+        var explosionEmitter = this.game.add.emitter(x, y, 200);
+        explosionEmitter.makeParticles('Smoke');
+        explosionEmitter.start(true, 1000, null, 200);
+    },
+
+    fixPosition: function (tank) {
+        if (
+            tank.x < 0 || 
+            tank.x > this.game.world.width ||
+            tank.y < 0 ||
+            tank.y > this.game.world.height
+        ) {
+            tank.alpha = 0;
+            tank.resetPosition();
+            this.add.tween(tank).to({
+                alpha: 1
+            }, 2000, Phaser.Easing.Linear.None, true);
+        }
     },
 
     adjustGameScale: function () {
