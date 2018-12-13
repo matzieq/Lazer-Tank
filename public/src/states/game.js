@@ -56,7 +56,7 @@ LazerTank.Game.prototype = {
     },
 
     shutdown: function () {
-        this.tank.removeFromDatabase();
+        if (this.tank) this.tank.removeFromDatabase();
     },
 
     checkScores: function () {
@@ -266,6 +266,12 @@ LazerTank.Game.prototype = {
                 newTankData = tank;
                 break;
             }
+        }
+        console.log(newTankData);
+
+        if (newTankData === null) {
+            this.game.state.start('Full');
+            return;
         }
         
         this.tank = new LazerTank.PlayerTank(newTankData, this.game, true);

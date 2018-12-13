@@ -6,5 +6,6 @@ LazerTank.game.state.add('Game', LazerTank.Game);
 LazerTank.game.state.add('Dbload', LazerTank.Dbload);
 LazerTank.game.state.add('Title', LazerTank.Title);
 LazerTank.game.state.add('Winning', LazerTank.Winning);
+LazerTank.game.state.add('Full', LazerTank.Full);
 
 LazerTank.game.state.start('Title');
