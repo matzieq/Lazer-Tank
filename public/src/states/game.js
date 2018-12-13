@@ -81,9 +81,9 @@ LazerTank.Game.prototype = {
     collideWithObjects: function () {
         this.game.physics.arcade.collide(this.tank, this.enemyTanks, function(playerTank, enemyTank) {
             this.explode.play();
-            // playerTank.resetPosition();
+            playerTank.resetPosition();
             enemyTank.resetPosition();
-            // playerTank.updateDatabase();
+            playerTank.updateDatabase();
             enemyTank.updateDatabase();
         }, null, this);
         

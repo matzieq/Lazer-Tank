@@ -49,9 +49,8 @@ LazerTank.PlayerTank = function (tankData, game, isLocal) {
         fill: tankData.fontColor
     };
 
+    //everyone displays their own score
     this.scoreText = game.add.text(tankData.scoreX, tankData.scoreY, this.score, this.style);
-    console.log(this.scoreText.text);
-    // this.updateDatabase();
 };
 
 //po jakim obiekcie dziedziczy
@@ -130,6 +129,7 @@ LazerTank.PlayerTank.prototype.updateDatabase = function () {
         velocityX: this.body.velocity.x,
         velocityY: this.body.velocity.y,
         angle: this.angle,
+        dir: this.dir,
         isFiring: this.bullet.alive,
         bulletX: this.bullet.x,
         bulletY: this.bullet.y,
