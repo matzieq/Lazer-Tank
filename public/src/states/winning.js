@@ -18,10 +18,10 @@ LazerTank.Winning.prototype = {
         this.game.renderer.renderSession.roundPixels = true;
         Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
         this.style = {
-            font: '12px Arial',
+            font: '20px Arial',
             fill: this.winnerId.toString()
         };
-        this.add.text(this.game.width / 2 - 60, this.game.height / 2,
+        this.add.text(this.game.width / 2 - 60, this.game.height / 2 - 40,
             (this.winnerId + " has won").toUpperCase(), this.style);
     },
 

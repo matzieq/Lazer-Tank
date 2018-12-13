@@ -297,6 +297,11 @@ LazerTank.Game.prototype = {
     watchForRemovedTanks: function () {
         firebase.database().ref('/tanks').on('child_removed', response => {
             var removedTank = response.val();
+            console.log("AAA!")
+            if (removedTank.score >= 10) {
+                console.log("grzyb");
+                this.state.start('Winning', true, false, removedTank.id);
+            }
             this.enemyTanks.forEach(function (enemyTank) {
                 if (enemyTank.id === removedTank.id) {
                     enemyTank.bullet.destroy();
