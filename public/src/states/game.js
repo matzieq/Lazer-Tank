@@ -24,54 +24,161 @@ LazerTank.Game.prototype = {
         
     },
     
+    
+
     create: function () {
         this.adjustGameScale();
         this.enableCrispRendering();
-        
-        this.cursors = this.input.keyboard.createCursorKeys();
-        
-        this.spaceKey = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-        this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+        this.loadKeys();
+        this.loadTankInfo();   
+        this.createTanks();
+        this.loadMaps();
 
-        this.wup = this.input.keyboard.addKey(Phaser.Keyboard.W);
-        this.wleft = this.input.keyboard.addKey(Phaser.Keyboard.A);
-        this.wdown = this.input.keyboard.addKey(Phaser.Keyboard.S);
-        this.wright = this.input.keyboard.addKey(Phaser.Keyboard.D);
-        
-        this.TANK_VELOCITY = 70;
-        this.TANK_ANIMATION_SPEED = 20;
+        //the only global sound
+        this.explode = this.add.audio('explode');
 
+        //timer for updating the database with tank data
+        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
+
+        //if the player closes the window we should clear tank data
+        this.removeTankIfUnloading();        
+    },
+    
+    
+    update: function () {
+        this.handleCollisions();
+        this.handleInput();
+        this.tank.makeNoise();      
+    },
+    
+    handleDatabase: function () {
+        this.tank.updateDatabase();  
+    },
+
+    handleCollisions: function () {
+        this.collideWithTerrain();
+        this.collideWithObjects();
+    },
+
+    collideWithTerrain: function () {
+        this.game.physics.arcade.collide(this.tank, this.terrainLayer);
+        this.game.physics.arcade.collide(this.tank, this.waterLayer);
+
+        this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
+            bullet.kill();
+        }, null, this);
+
+        this.game.physics.arcade.collide(this.enemyTanks, this.terrainLayer, function (tank, terrain) {
+            tank.body.velocity.setTo(0, 0);
+        }, null, this);
+
+        this.game.physics.arcade.collide(this.enemyTanks, this.waterLayer, function (tank, terrain) {
+            tank.body.velocity.setTo(0, 0);
+        }, null, this);
+    },
+
+    collideWithObjects: function () {
+        this.game.physics.arcade.collide(this.tank, this.enemyTanks, function(playerTank, enemyTank) {
+            this.explode.play();
+            playerTank.resetPosition();
+            enemyTank.resetPosition();
+            playerTank.updateDatabase();
+        }, null, this);
+        
+        
+        this.game.physics.arcade.collide(this.tank.bullet, this.enemyTanks, function (bullet, tank) {
+            bullet.kill();
+            tank.resetPosition();
+            tank.updateDatabase();
+            this.explode.play();
+            this.tank.increaseScore(1);
+        }, null, this);
+
+        
+        this.game.physics.arcade.collide(this.enemyBullets, this.tank, function (tank, bullet) {
+            bullet.kill();
+            this.explode.play();
+            tank.resetPosition();
+            tank.updateDatabase();
+        }, null, this);
+    },
+
+    adjustGameScale: function () {
+        this.game.scale.pageAlignVertically = true;
+        this.game.scale.pageAlignHorizontally = true;
+        this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    },
+
+    enableCrispRendering: function () {
+        this.game.renderer.renderSession.roundPixels = true;
+        Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
+    },
+
+    handleInput: function () {
+        this.tank.body.velocity.setTo(0, 0);
+        if (this.cursors.up.isDown) {
+            this.tank.move('up');
+        } else if (this.cursors.down.isDown) {
+            this.tank.move('down');
+        } else if (this.cursors.left.isDown) {
+            this.tank.move('left');
+        } else if (this.cursors.right.isDown) {  
+            this.tank.move('right');
+        }
+       
+        if (this.spaceKey.isDown) {
+            
+            this.tank.fire();
+        }
+        
+    },
+
+    loadTankInfo: function () {
         this.availableTanks = [
             {
                 id: 'green',
                 color: 0x55ff55,
+                fontColor: '#55ff55',
                 available: true,
                 x: 50,
-                y: 50
+                y: 50,
+                scoreX: 20,
+                scoreY: 20
             },
             {
                 id: 'red',
                 color: 0xff5555,
+                fontColor: '#ff5555',
                 available: true,
                 x: 430,
-                y: 50
+                y: 50,
+                scoreX: 450,
+                scoreY: 20
             },
             {
                 id: 'blue',
                 color: 0x5555ff,
+                fontColor: '#5555ff',
                 available: true,
                 x: 430,
-                y: 230
+                y: 230,
+                scoreX: 450,
+                scoreY: 250
             },
             {
                 id: 'yellow',
                 color: 0xFFFF55,
+                fontColor: '#ffff55',
                 available: true,
                 x: 50,
-                y: 230
+                y: 230,
+                scoreX: 20,
+                scoreY: 250
             }
         ];
-        
+    },
+
+    createTanks: function () {
         for (item of this.tankBase) {
             for (tank of this.availableTanks) {
                 if (item.id === tank.id) {
@@ -92,7 +199,11 @@ LazerTank.Game.prototype = {
         this.tank.updateDatabase();
         this.enemyTanks = this.add.group();
         this.enemyBullets = this.add.group();
+        this.addTankToDatabase(newTankData);
+        
+    },
 
+    addTankToDatabase: function (newTankData) {
         firebase.database().ref('/tanks').on('child_added', response => {
             var addedTank = response.val();
             for (tank of this.availableTanks) {
@@ -108,100 +219,39 @@ LazerTank.Game.prototype = {
                 }
             }
         });
-        this.explode = this.add.audio('explode');
-        console.log(this.enemyBullets);
+    },
+
+    loadKeys: function () {
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    },
+
+    loadMaps: function () {
+        //rock and bushes
         this.map = this.add.tilemap('terrainLevel1');
-        this.waterMap = this.add.tilemap('waterLevel1');
         this.map.addTilesetImage('TankTerrain', 'Tiles');
-        this.waterMap.addTilesetImage('TankTerrain', 'Tiles');
         this.terrainLayer = this.map.createLayer('collision');
+        this.bushLayer = this.map.createLayer('bushes');
+
+        //water - must be separate because collisions work differently
+        this.waterMap = this.add.tilemap('waterLevel1');
+        this.waterMap.addTilesetImage('TankTerrain', 'Tiles');
         this.waterLayer = this.waterMap.createLayer('water');
+
+        //bullets must be shown flying over water
+        this.game.world.sendToBack(this.waterLayer);
+
+        //setting collisions
         this.map.setCollisionBetween(1, 1000, true, 'collision');
         this.waterMap.setCollisionBetween(1, 1000, true, 'water');
-        this.game.world.sendToBack(this.waterLayer);
-        this.bushLayer = this.map.createLayer('bushes');
-        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
+        
+    },
+
+    removeTankIfUnloading: function () {
         var self = this;
         window.onbeforeunload = function (e) {
             self.tank.removeFromDatabase();
+            self.tank.kill();
         }
-    },
-    
-    handleDatabase: function () {
-    
-        this.tank.updateDatabase();
-        
-    },
-
-    update: function () {
-        this.game.physics.arcade.collide(this.tank, this.terrainLayer);
-        this.game.physics.arcade.collide(this.tank, this.waterLayer);
-        this.game.physics.arcade.collide(this.tank, this.enemyTanks, function(playerTank, enemyTank) {
-            this.explode.play();
-            playerTank.reset(playerTank.startX, playerTank.startY);
-            enemyTank.reset(enemyTank.startX, enemyTank.startY);
-            playerTank.updateDatabase();
-        }, null, this);
-        
-        // this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer);
-        this.game.physics.arcade.collide(this.tank.bullet, this.terrainLayer, function (bullet, terrain) {
-            bullet.kill();
-        }, null, this);
-        this.game.physics.arcade.collide(this.tank.bullet, this.enemyTanks, function (bullet, tank) {
-            bullet.kill();
-            this.explode.play();
-            this.tank.score++;
-        }, null, this);
-
-        
-        this.game.physics.arcade.collide(this.enemyBullets, this.tank, function (tank, bullet) {
-            bullet.kill();
-            this.explode.play();
-            tank.reset(tank.startX, tank.startY)
-            tank.updateDatabase();
-        }, null, this);
-        
-
-        this.game.physics.arcade.collide(this.enemyTanks, this.terrainLayer, function (tank, terrain) {
-            tank.body.velocity.setTo(0, 0);
-        }, null, this);
-        this.game.physics.arcade.collide(this.enemyTanks, this.waterLayer, function (tank, terrain) {
-            tank.body.velocity.setTo(0, 0);
-        }, null, this);
-       
-        this.handleInput();
-        this.tank.makeNoise();      
-    },
-
-    adjustGameScale: function () {
-        this.game.scale.pageAlignVertically = true;
-        this.game.scale.pageAlignHorizontally = true;
-        this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-    },
-
-    enableCrispRendering: function () {
-        this.game.renderer.renderSession.roundPixels = true;
-        Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
-    },
-
-    handleInput: function () {
-        // console.log(this.tank.x, this.tank.y);
-        this.tank.body.velocity.setTo(0, 0);
-        if (this.cursors.up.isDown) {
-            this.tank.move('up');
-        } else if (this.cursors.down.isDown) {
-            this.tank.move('down');
-        } else if (this.cursors.left.isDown) {
-            this.tank.move('left');
-        } else if (this.cursors.right.isDown) {  
-            this.tank.move('right');
-        }
-       
-
-        if (this.spaceKey.isDown) {
-            
-            this.tank.fire();
-        }
-        
     }
 }

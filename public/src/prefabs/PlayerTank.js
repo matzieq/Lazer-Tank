@@ -43,6 +43,14 @@ LazerTank.PlayerTank = function (tankData, game, isLocal) {
         engineLo: game.add.audio('enginelo', 1 ,true),
         fire: game.add.audio('fire')
     }
+    
+    this.style = {
+        font: '20px Arial',
+        fill: tankData.fontColor
+    };
+
+    this.scoreText = game.add.text(tankData.scoreX, tankData.scoreY, this.score, this.style);
+    console.log(this.scoreText.text);
     // this.updateDatabase();
 };
 
@@ -116,11 +124,12 @@ LazerTank.PlayerTank.prototype.resetPosition = function() {
 LazerTank.PlayerTank.prototype.updateDatabase = function () {
     var dataToPush = {
         id: this.id,
+        score: this.score,
         x: this.x,
         y: this.y,
         velocityX: this.body.velocity.x,
         velocityY: this.body.velocity.y,
-        dir: this.dir,
+        angle: this.angle,
         isFiring: this.bullet.alive,
         bulletX: this.bullet.x,
         bulletY: this.bullet.y,
@@ -136,9 +145,11 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
             this.animations.play('drive', this.TANK_ANIMATION_SPEED, false);
             this.x = pulledData.x;
             this.y = pulledData.y;
+            this.score = pulledData.score;
+            this.scoreText.text = pulledData.score;
             this.body.velocity.x = pulledData.velocityX;
             this.body.velocity.y = pulledData.velocityY;
-            this.setDir(pulledData.dir.x, pulledData.dir.y);
+            this.angle = pulledData.angle;
             this.bullet.x = pulledData.bulletX;
             this.bullet.y = pulledData.bulletY;
             if (pulledData.isFiring && !this.bullet.alive) {
@@ -159,5 +170,10 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
 
 LazerTank.PlayerTank.prototype.removeFromDatabase = function () {
     firebase.database().ref('/tanks').child(this.id).remove();
+}
+
+LazerTank.PlayerTank.prototype.increaseScore = function(amount) {
+    this.score += amount;
+    this.scoreText.text = this.score;
 }
 
