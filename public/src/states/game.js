@@ -38,7 +38,7 @@ LazerTank.Game.prototype = {
         this.explode = this.add.audio('explode');
 
         //timer for updating the database with tank data
-        this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
+        // this.updateTimer = this.game.time.events.loop(Phaser.Timer.SECOND / 10, this.handleDatabase, this);
 
         //if the player closes the window we should clear tank data
         this.removeTankIfUnloading();        
@@ -48,6 +48,7 @@ LazerTank.Game.prototype = {
     update: function () {
         this.handleCollisions();
         this.handleInput();
+        this.tank.updateDatabase();
         this.tank.makeNoise();      
     },
     
