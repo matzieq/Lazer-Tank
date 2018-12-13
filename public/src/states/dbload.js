@@ -9,7 +9,7 @@ LazerTank.Dbload.prototype = {
             response.forEach(item => {
                 this.tankBase.push(item.val());
             });
-            console.log(this.tankBase);
+            
             this.state.start('Game', true, false, this.tankBase);
         });
     },

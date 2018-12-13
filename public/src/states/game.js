@@ -61,11 +61,12 @@ LazerTank.Game.prototype = {
 
     checkScores: function () {
         if (this.tank.score >= 10) {
-           
+            this.tank.won = true;
+            this.tank.updateDatabase();
             this.state.start('Winning', true, false, this.tank.id);
         }
         this.enemyTanks.forEach(function(enemyTank) {
-            if (enemyTank.score >= 10) {
+            if (enemyTank.won) {
                 this.state.start('Winning', true, false, enemyTank.id);
             } 
         }, this);
@@ -287,7 +288,7 @@ LazerTank.Game.prototype = {
                         tank, this.game, true);
                     newTank.pullFromDatabase();
                     this.enemyTanks.add(newTank);
-                    console.log(newTank.bullet);
+                    
                     this.enemyBullets.add(newTank.bullet);
                 }
             }
@@ -298,7 +299,7 @@ LazerTank.Game.prototype = {
         firebase.database().ref('/tanks').on('child_removed', response => {
             var removedTank = response.val();
             console.log("AAA!")
-            if (removedTank.score >= 10) {
+            if (removedTank.won) {
                 console.log("grzyb");
                 this.state.start('Winning', true, false, removedTank.id);
             }

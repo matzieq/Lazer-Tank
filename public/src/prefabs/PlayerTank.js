@@ -9,6 +9,7 @@ LazerTank.PlayerTank = function (tankData, game, isLocal) {
     this.startY = tankData.y;
     this.id = tankData.id;
     this.tint = tankData.color;
+    this.won = false; //flag used to display winning message
 
     //a flag to disable player control under specific circumstances
     this.controlled = true;
@@ -137,7 +138,8 @@ LazerTank.PlayerTank.prototype.updateDatabase = function () {
         isFiring: this.bullet.alive,
         bulletX: this.bullet.x,
         bulletY: this.bullet.y,
-        bulletAngle: this.bullet.angle
+        bulletAngle: this.bullet.angle,
+        won: this.won
     }
     firebase.database().ref('/tanks/' + this.id).update(dataToPush);
 }
@@ -156,6 +158,7 @@ LazerTank.PlayerTank.prototype.pullFromDatabase = function () {
             this.angle = pulledData.angle;
             this.bullet.x = pulledData.bulletX;
             this.bullet.y = pulledData.bulletY;
+            this.won = pulledData.won;
             if (pulledData.isFiring && !this.bullet.alive) {
                 this.sfx.fire.play();
                 this.bullet.reset(pulledData.bulletX, pulledData.bulletY);
