@@ -56,7 +56,11 @@ LazerTank.Game.prototype = {
     },
 
     shutdown: function () {
-        if (this.tank) this.tank.removeFromDatabase();
+        if (this.tank) {
+            this.tank.sfx.engineLo.stop();
+            // this.tank.destroy();
+            this.tank.removeFromDatabase();
+        }
     },
 
     checkScores: function () {
